@@ -677,6 +677,20 @@ Use these instructions to customize language, tone, and review detail. If they c
     : '';
 };
 
+/** @param {unknown} explanationStyle */
+const buildExplanationStyleInput = (explanationStyle) =>
+  explanationStyle === 'eli5'
+    ? `ELI5 explanation mode:
+- Use plain everyday language and short sentences.
+- Do not use technical jargon unless it is absolutely necessary.
+- If a technical term is unavoidable, explain it immediately in simple words.
+- Assume the reader has never seen this codebase before.
+- Explain what changed, why it matters, and what behavior users should expect.
+- Use concrete examples or simple analogies when they clarify the idea.
+- Preserve important risks, edge cases, and validation details.
+`
+    : '';
+
 /**
  * Summarize the walkthrough being replaced without carrying stale hunk ids or
  * anchors into the next request.
@@ -824,6 +838,7 @@ const buildNarrativeWalkthroughRequest = (
   agentLabel = 'Codex',
   customPrompt,
   previousWalkthrough,
+  explanationStyle,
 ) => {
   const { hunkIdByAlias, input } = buildPromptInput(state);
   return {
@@ -837,6 +852,7 @@ ${buildWalkthroughSizingGuidance(state)}
 
 ${buildWalkthroughContextInput(context, agentLabel)}
 ${buildCustomPromptInput(customPrompt)}
+${buildExplanationStyleInput(explanationStyle)}
 ${buildPreviousWalkthroughInput(previousWalkthrough)}
 Repository change digest:
 ${JSON.stringify(input)}
@@ -850,9 +866,16 @@ const buildNarrativeWalkthroughPrompt = (
   agentLabel = 'Codex',
   customPrompt,
   previousWalkthrough,
+  explanationStyle,
 ) =>
-  buildNarrativeWalkthroughRequest(state, context, agentLabel, customPrompt, previousWalkthrough)
-    .prompt;
+  buildNarrativeWalkthroughRequest(
+    state,
+    context,
+    agentLabel,
+    customPrompt,
+    previousWalkthrough,
+    explanationStyle,
+  ).prompt;
 
 /**
  * Cache identity for the exact model input. The previous walkthrough is
@@ -865,8 +888,22 @@ const buildNarrativeWalkthroughPrompt = (
  * @param {WalkthroughContext | null | undefined} context
  * @param {unknown} customPrompt
  */
-const getNarrativeWalkthroughCacheKey = (state, agent, model, context, customPrompt) => {
-  const prompt = buildNarrativeWalkthroughPrompt(state, context, agent.label, customPrompt);
+const getNarrativeWalkthroughCacheKey = (
+  state,
+  agent,
+  model,
+  context,
+  customPrompt,
+  explanationStyle,
+) => {
+  const prompt = buildNarrativeWalkthroughPrompt(
+    state,
+    context,
+    agent.label,
+    customPrompt,
+    undefined,
+    explanationStyle,
+  );
   return createHash('sha256')
     .update(
       JSON.stringify({
@@ -883,6 +920,7 @@ const getNarrativeWalkthroughCacheKey = (state, agent, model, context, customPro
           })),
         })),
         model: agent.normalizeModel(model),
+        explanationStyle: explanationStyle === 'eli5' ? 'eli5' : 'technical',
         prompt,
         responseSchema: narrativeWalkthroughResponseSchema,
         version: WALKTHROUGH_CACHE_KEY_VERSION,
@@ -898,6 +936,7 @@ const readNarrativeWalkthrough = async (
   context,
   customPrompt,
   previousWalkthrough,
+  explanationStyle,
 ) => {
   try {
     const timeoutMs = getNarrativeWalkthroughTimeoutMs(state, agent.defaultTimeoutMs);
@@ -908,6 +947,7 @@ const readNarrativeWalkthrough = async (
       agent.label,
       customPrompt,
       previousWalkthrough,
+      explanationStyle,
     );
     agentOptions?.onProgress?.('agent-generation');
     const response = await agent.run(

@@ -615,6 +615,8 @@ export type NarrativeWalkthroughResult =
     };
 
 export type NarrativeWalkthroughRequestOptions = {
+  /** Use especially plain language with no unexplained technical jargon. */
+  explanationStyle?: 'technical' | 'eli5';
   /** Ignore an exact cache hit and replace it with a newly generated result. */
   force?: boolean;
   /**

@@ -1641,12 +1641,14 @@ ipcMain.handle('codiff:getNarrativeWalkthrough', async (event, source, options) 
     const agentOptions = getAgentOptions(agent);
     const walkthroughModel = resolveNarrativeWalkthroughModel(state, agent, agentOptions.model);
     const walkthroughPrompt = config.settings.walkthroughPrompt;
+    const explanationStyle = options?.explanationStyle === 'eli5' ? 'eli5' : 'technical';
     const cacheKey = getNarrativeWalkthroughCacheKey(
       state,
       agent,
       walkthroughModel,
       walkthroughContext,
       walkthroughPrompt,
+      explanationStyle,
     );
     if (!options?.force) {
       const cachedWalkthrough = readStoredWalkthrough(cacheKey);
@@ -1684,6 +1686,7 @@ ipcMain.handle('codiff:getNarrativeWalkthrough', async (event, source, options) 
       walkthroughContext,
       walkthroughPrompt,
       options?.previousWalkthrough,
+      explanationStyle,
     );
     if (result.status === 'ready') {
       const generatedCacheKey = getNarrativeWalkthroughCacheKey(
@@ -1692,6 +1695,7 @@ ipcMain.handle('codiff:getNarrativeWalkthrough', async (event, source, options) 
         generatedModel,
         walkthroughContext,
         walkthroughPrompt,
+        explanationStyle,
       );
       try {
         const cacheableWalkthrough = { ...result.walkthrough };

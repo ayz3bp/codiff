@@ -159,8 +159,8 @@ export function useAppWalkthrough({
 
           if (result.status === 'ready') {
             setNarrativeWalkthrough(result.walkthrough);
-            if (sidebarModeRef.current === 'walkthrough') {
-              setSidebarMode('walkthrough');
+            if (sidebarModeRef.current === 'walkthrough' || sidebarModeRef.current === 'eli5') {
+              setSidebarMode(sidebarModeRef.current);
             } else {
               setWalkthroughUnread(true);
             }
@@ -205,6 +205,7 @@ export function useAppWalkthrough({
       }
 
       loadNarrativeWalkthrough(nextState.source, {
+        explanationStyle: sidebarModeRef.current === 'eli5' ? 'eli5' : 'technical',
         force: true,
         previousWalkthrough: previousWalkthrough ?? undefined,
       });
@@ -214,6 +215,11 @@ export function useAppWalkthrough({
 
   const changeSidebarMode = useCallback(
     (mode: SidebarMode) => {
+      const previousMode = sidebarModeRef.current;
+      const switchingExplanationStyle =
+        (previousMode === 'walkthrough' || previousMode === 'eli5') &&
+        (mode === 'walkthrough' || mode === 'eli5') &&
+        previousMode !== mode;
       setMainMode('review');
       if (mode === 'tree') {
         setSidebarMode('tree');
@@ -225,9 +231,15 @@ export function useAppWalkthrough({
         return;
       }
 
-      setSidebarMode('walkthrough');
+      setSidebarMode(mode);
       setWalkthroughUnread(false);
-      if (narrativeWalkthrough || walkthroughError || walkthroughLoading || !state) {
+      if (!state) {
+        return;
+      }
+      if (
+        !switchingExplanationStyle &&
+        (narrativeWalkthrough || walkthroughError || walkthroughLoading)
+      ) {
         return;
       }
       if (state.files.length === 0) {
@@ -237,9 +249,19 @@ export function useAppWalkthrough({
         return;
       }
 
-      loadNarrativeWalkthrough(state.source);
+      loadNarrativeWalkthrough(state.source, {
+        explanationStyle: mode === 'eli5' ? 'eli5' : 'technical',
+        force: switchingExplanationStyle,
+      });
     },
-    [loadNarrativeWalkthrough, narrativeWalkthrough, state, walkthroughError, walkthroughLoading],
+    [
+      loadNarrativeWalkthrough,
+      narrativeWalkthrough,
+      sidebarModeRef,
+      state,
+      walkthroughError,
+      walkthroughLoading,
+    ],
   );
 
   const openCommitView = useCallback(() => {
@@ -354,7 +376,8 @@ export function useAppWalkthrough({
     setWalkthroughFileError,
     setWalkthroughLoading,
     setWalkthroughUnread,
-    showNarrativeWalkthrough: narrativeWalkthrough != null && sidebarMode === 'walkthrough',
+    showNarrativeWalkthrough:
+      narrativeWalkthrough != null && (sidebarMode === 'walkthrough' || sidebarMode === 'eli5'),
     showPlainCommitView,
     sidebarMode,
     sidebarModeRef,
