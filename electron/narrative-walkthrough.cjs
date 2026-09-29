@@ -688,6 +688,11 @@ const buildExplanationStyleInput = (explanationStyle) =>
 - Explain what changed, why it matters, and what behavior users should expect.
 - Use concrete examples or simple analogies when they clarify the idea.
 - Preserve important risks, edge cases, and validation details.
+- Rewrite every user-facing field for this mode, including focus, titles, chapter
+  blurbs, stop prose, support explanations, and commit messages.
+- Do not copy technical wording from the previous walkthrough into the new stops.
+- Keep ids, hunk references, ordering, anchors, and code facts unchanged; only
+  simplify the human-facing language.
 `
     : '';
 

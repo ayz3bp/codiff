@@ -70,13 +70,13 @@ export const getWalkthroughBlockScrollTarget = ({
 }): WalkthroughBlockScrollTarget | null =>
   scrollTarget.kind === 'support' && firstSupportBlockId
     ? {
-        behavior: 'smooth',
+        behavior: 'instant',
         blockId: firstSupportBlockId,
         request: scrollTarget.nonce,
       }
     : scrollTarget.kind === 'stop' && activeBlockId && scrollTarget.nonce > 0
       ? {
-          behavior: 'smooth',
+          behavior: 'instant',
           blockId: activeBlockId,
           request: scrollTarget.nonce,
         }
@@ -516,12 +516,14 @@ function Arc({
 
 export function NarrativeWalkthroughView({
   allowCommit = true,
+  eli5Enabled = false,
   files,
   navigation,
   onActiveReviewTargetChange,
   onCommit,
   onCommitOutput,
   onShareWalkthrough,
+  onToggleEli5,
   onUpdateCommitMessage,
   renderDiffBlocks,
   shareWalkthroughDisabled,
@@ -529,12 +531,14 @@ export function NarrativeWalkthroughView({
   walkthrough,
 }: {
   allowCommit?: boolean;
+  eli5Enabled?: boolean;
   files: ReadonlyArray<ChangedFile>;
   navigation: NarrativeNavigation;
   onActiveReviewTargetChange: (target: WalkthroughReviewTarget | null) => void;
   onCommit: CommitHandler;
   onCommitOutput?: CommitOutputSubscriber;
   onShareWalkthrough?: () => void;
+  onToggleEli5?: () => void;
   onUpdateCommitMessage: CommitMessageHandler;
   renderDiffBlocks: RenderWalkthroughDiffBlocks;
   shareWalkthroughDisabled?: boolean;
@@ -691,6 +695,22 @@ export function NarrativeWalkthroughView({
       onTouchStartCapture={navigation.releaseStopScrollLock}
       onWheelCapture={navigation.releaseStopScrollLock}
     >
+      {eli5Enabled && walkthroughView ? (
+        <div className="wt-eli5-intro" role="note">
+          <div className="wt-eli5-badge">ELI5 explanation</div>
+          <p>{walkthrough.focus}</p>
+        </div>
+      ) : null}
+      {onToggleEli5 ? (
+        <button
+          aria-pressed={eli5Enabled}
+          className={`wt-eli5-toggle${eli5Enabled ? ' active' : ''}`}
+          onClick={onToggleEli5}
+          type="button"
+        >
+          {eli5Enabled ? 'Use technical explanations' : 'Explain simply'}
+        </button>
+      ) : null}
       <Arc
         committable={committable}
         navigation={navigation}

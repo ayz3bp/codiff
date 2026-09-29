@@ -43,6 +43,7 @@ export function useAppWalkthrough({
   const [narrativeWalkthrough, setNarrativeWalkthrough] = useState<NarrativeWalkthrough | null>(
     null,
   );
+  const [eli5Enabled, setEli5Enabled] = useState(false);
   const [shareWalkthroughEnabled, setShareWalkthroughEnabled] = useState(false);
   const [sidebarMode, setSidebarMode] = useState<SidebarMode>('tree');
   const [walkthroughError, setWalkthroughError] = useState<WalkthroughError | null>(null);
@@ -159,7 +160,7 @@ export function useAppWalkthrough({
 
           if (result.status === 'ready') {
             setNarrativeWalkthrough(result.walkthrough);
-            if (sidebarModeRef.current === 'walkthrough' || sidebarModeRef.current === 'eli5') {
+            if (sidebarModeRef.current === 'walkthrough') {
               setSidebarMode(sidebarModeRef.current);
             } else {
               setWalkthroughUnread(true);
@@ -205,21 +206,16 @@ export function useAppWalkthrough({
       }
 
       loadNarrativeWalkthrough(nextState.source, {
-        explanationStyle: sidebarModeRef.current === 'eli5' ? 'eli5' : 'technical',
+        explanationStyle: eli5Enabled ? 'eli5' : 'technical',
         force: true,
         previousWalkthrough: previousWalkthrough ?? undefined,
       });
     },
-    [loadNarrativeWalkthrough],
+    [eli5Enabled, loadNarrativeWalkthrough],
   );
 
   const changeSidebarMode = useCallback(
     (mode: SidebarMode) => {
-      const previousMode = sidebarModeRef.current;
-      const switchingExplanationStyle =
-        (previousMode === 'walkthrough' || previousMode === 'eli5') &&
-        (mode === 'walkthrough' || mode === 'eli5') &&
-        previousMode !== mode;
       setMainMode('review');
       if (mode === 'tree') {
         setSidebarMode('tree');
@@ -236,10 +232,7 @@ export function useAppWalkthrough({
       if (!state) {
         return;
       }
-      if (
-        !switchingExplanationStyle &&
-        (narrativeWalkthrough || walkthroughError || walkthroughLoading)
-      ) {
+      if (narrativeWalkthrough || walkthroughError || walkthroughLoading) {
         return;
       }
       if (state.files.length === 0) {
@@ -250,19 +243,30 @@ export function useAppWalkthrough({
       }
 
       loadNarrativeWalkthrough(state.source, {
-        explanationStyle: mode === 'eli5' ? 'eli5' : 'technical',
-        force: switchingExplanationStyle,
+        explanationStyle: eli5Enabled ? 'eli5' : 'technical',
       });
     },
     [
       loadNarrativeWalkthrough,
       narrativeWalkthrough,
-      sidebarModeRef,
+      eli5Enabled,
       state,
       walkthroughError,
       walkthroughLoading,
     ],
   );
+
+  const toggleEli5 = useCallback(() => {
+    const next = !eli5Enabled;
+    setEli5Enabled(next);
+    if (stateRef.current && sidebarModeRef.current === 'walkthrough') {
+      loadNarrativeWalkthrough(stateRef.current.source, {
+        explanationStyle: next ? 'eli5' : 'technical',
+        force: true,
+        previousWalkthrough: narrativeWalkthroughRef.current ?? undefined,
+      });
+    }
+  }, [eli5Enabled, loadNarrativeWalkthrough, stateRef]);
 
   const openCommitView = useCallback(() => {
     const currentState = stateRef.current;
@@ -360,6 +364,7 @@ export function useAppWalkthrough({
     changeSidebarMode,
     closeCommitView,
     commitWalkthrough,
+    eli5Enabled,
     enabledShareWalkthrough: shareWalkthroughEnabled ? shareWalkthrough : undefined,
     mainModeRef,
     narrativeNavigation,
@@ -376,13 +381,13 @@ export function useAppWalkthrough({
     setWalkthroughFileError,
     setWalkthroughLoading,
     setWalkthroughUnread,
-    showNarrativeWalkthrough:
-      narrativeWalkthrough != null && (sidebarMode === 'walkthrough' || sidebarMode === 'eli5'),
+    showNarrativeWalkthrough: narrativeWalkthrough != null && sidebarMode === 'walkthrough',
     showPlainCommitView,
     sidebarMode,
     sidebarModeRef,
     startWalkthroughLoading,
     subscribeToCommitOutput,
+    toggleEli5,
     updateActiveWalkthroughReviewTarget,
     updateWalkthroughCommitMessage,
     walkthroughError,

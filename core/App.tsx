@@ -299,6 +299,7 @@ export default function App() {
     changeSidebarMode,
     closeCommitView,
     commitWalkthrough,
+    eli5Enabled,
     enabledShareWalkthrough,
     mainModeRef,
     narrativeNavigation,
@@ -321,6 +322,7 @@ export default function App() {
     sidebarModeRef,
     startWalkthroughLoading,
     subscribeToCommitOutput,
+    toggleEli5,
     updateActiveWalkthroughReviewTarget,
     updateWalkthroughCommitMessage,
     walkthroughError,
@@ -1673,7 +1675,7 @@ export default function App() {
   const isPullRequest = state.source.type === 'pull-request';
   const isSwitchingSource = pendingSource != null;
   const showAgentUnavailablePanel =
-    (sidebarMode === 'walkthrough' || sidebarMode === 'eli5') &&
+    sidebarMode === 'walkthrough' &&
     !narrativeWalkthrough &&
     !walkthroughLoading &&
     (walkthroughError?.code === 'CODEX_NOT_FOUND' ||
@@ -1788,13 +1790,6 @@ export default function App() {
       indicator: walkthroughUnread ? <span aria-hidden className="review-mode-dot" /> : undefined,
       label: 'Walkthrough',
       value: 'walkthrough',
-    },
-    {
-      ariaLabel: 'Explain this change simply',
-      icon: <Path aria-hidden size={14} weight="fill" />,
-      label: 'ELI5',
-      title: 'Explain this change without technical jargon',
-      value: 'eli5',
     },
     {
       icon: <TreeStructure aria-hidden size={14} weight="bold" />,
@@ -1994,12 +1989,14 @@ export default function App() {
           />
         ) : showNarrativeWalkthrough && narrativeWalkthrough ? (
           <NarrativeWalkthroughView
+            eli5Enabled={eli5Enabled}
             files={state.files}
             navigation={narrativeNavigation}
             onActiveReviewTargetChange={updateActiveWalkthroughReviewTarget}
             onCommit={commitWalkthrough}
             onCommitOutput={subscribeToCommitOutput}
             onShareWalkthrough={enabledShareWalkthrough}
+            onToggleEli5={toggleEli5}
             onUpdateCommitMessage={updateWalkthroughCommitMessage}
             renderDiffBlocks={renderWalkthroughDiffBlocks}
             shareWalkthroughDisabled={walkthroughSharing}
