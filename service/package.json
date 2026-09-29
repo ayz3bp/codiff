@@ -63,7 +63,7 @@
     }
   },
   "scripts": {
-    "build": "rm -rf dist && vp pack -d dist --target=node24 index.ts api.ts db.ts fate.ts react.tsx schema.ts upload-intent.ts views.ts",
+    "build": "node -e \"require('node:fs').rmSync('dist', { recursive: true, force: true })\" && vp pack -d dist --target=node24 index.ts api.ts db.ts fate.ts react.tsx schema.ts upload-intent.ts views.ts",
     "typecheck": "vp exec tsc --noEmit -p ../tsconfig.json"
   },
   "dependencies": {
